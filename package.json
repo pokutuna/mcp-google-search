@@ -1,0 +1,28 @@
+{
+  "name": "mcp-google-search",
+  "version": "1.0.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "author": "mail@pokutuna.com",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "node --env-file=.env --import tsx src/index.ts",
+    "inspector": "npx @modelcontextprotocol/inspector",
+    "start": "node --env-file=.env dist/index.js"
+  },
+  "dependencies": {
+    "@google/genai": "^1.13.0",
+    "@modelcontextprotocol/sdk": "^1.17.2",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.2.1",
+    "tsx": "^4.20.3",
+    "typescript": "^5.9.2"
+  }
+}
