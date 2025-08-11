@@ -1,5 +1,5 @@
-PROJECT := TODO
-GCLOUD := gcloud --project $(PROJECT)
+PROJECT ?= YOUR_PROJECT_ID
+GCLOUD := gcloud --project=$(PROJECT)
 
 .PHONY: build
 build:

@@ -30,4 +30,7 @@ Deploy to Google App Engine.
 3. Deploy:
    ```bash
    $ make deploy
+
+   # or set the project directly in the command
+   $ PROJECT=YOUR_GOOGLE_CLOUD_PROJECT make deploy
    ```
