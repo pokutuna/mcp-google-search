@@ -8,6 +8,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "node --env-file=.env --import tsx src/index.ts",
+    "gcp-build": "",
     "inspector": "npx @modelcontextprotocol/inspector",
     "start": "NODE_ENV=production node --env-file=.env dist/index.js"
   },
