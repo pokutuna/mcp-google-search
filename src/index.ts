@@ -17,6 +17,7 @@ if (env.NODE_ENV === "development") {
 }
 
 const mcpServer = await createMcpServer();
+
 app.post("/mcp", async (req, res) => {
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
@@ -29,5 +30,3 @@ const PORT = env.PORT;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-
-export default app;

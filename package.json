@@ -9,7 +9,7 @@
     "build": "tsc",
     "dev": "node --env-file=.env --import tsx src/index.ts",
     "inspector": "npx @modelcontextprotocol/inspector",
-    "start": "node --env-file=.env dist/index.js"
+    "start": "NODE_ENV=production node --env-file=.env dist/index.js"
   },
   "dependencies": {
     "@google/genai": "^1.13.0",
