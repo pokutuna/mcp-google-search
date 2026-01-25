@@ -1,74 +1,48 @@
-import express from "express";
-import cors from "cors";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { serve } from "@hono/node-server";
+import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { createMcpServer } from "./mcp.js";
 import { env } from "./env.js";
 
-const app = express();
-app.use(express.json());
+const app = new Hono();
 
 // CORS for MCP Inspector
 if (env.NODE_ENV === "development") {
-  app.use(
-    cors({
-      origin: "*",
-    }),
-  );
+  app.use("*", cors({ origin: "*" }));
 }
 
 const mcpServer = await createMcpServer();
 
-app.post("/mcp", async (req, res) => {
+app.all("/mcp", async (c) => {
   try {
-    const transport = new StreamableHTTPServerTransport({
+    const transport = new WebStandardStreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
     });
     await mcpServer.connect(transport);
-    await transport.handleRequest(req, res, req.body);
+    return transport.handleRequest(c.req.raw);
   } catch (error) {
     console.error("Error handling MCP request:", error);
-    if (!res.headersSent) {
-      res.status(500).json({
+    return c.json(
+      {
         jsonrpc: "2.0",
         error: {
           code: -32603,
           message: "Internal server error",
         },
         id: null,
-      });
-    }
+      },
+      500,
+    );
   }
 });
 
-app.get("/mcp", async (_req, res) => {
-  console.log("Received GET MCP request");
-  res.writeHead(405).end(
-    JSON.stringify({
-      jsonrpc: "2.0",
-      error: {
-        code: -32000,
-        message: "Method not allowed.",
-      },
-      id: null,
-    }),
-  );
-});
-
-app.delete("/mcp", async (_req, res) => {
-  console.log("Received DELETE MCP request");
-  res.writeHead(405).end(
-    JSON.stringify({
-      jsonrpc: "2.0",
-      error: {
-        code: -32000,
-        message: "Method not allowed.",
-      },
-      id: null,
-    }),
-  );
-});
-
-const PORT = env.PORT;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+serve(
+  {
+    fetch: app.fetch,
+    port: env.PORT,
+  },
+  () => {
+    console.log(`Server running on port ${env.PORT}`);
+  },
+);
