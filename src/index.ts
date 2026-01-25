@@ -18,6 +18,7 @@ app.all("/mcp", async (c) => {
   try {
     const transport = new WebStandardStreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
+      enableJsonResponse: true,
     });
     await mcpServer.connect(transport);
     return transport.handleRequest(c.req.raw);
