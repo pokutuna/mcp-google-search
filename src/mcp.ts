@@ -8,7 +8,7 @@ import { fileURLToPath } from "url";
 async function packageVersion(): Promise<string> {
   const packageJsonText = await readFile(
     join(dirname(fileURLToPath(import.meta.url)), "../package.json"),
-    "utf8"
+    "utf8",
   );
   const packageJson = JSON.parse(packageJsonText);
   return packageJson.version;
@@ -29,14 +29,14 @@ export async function createMcpServer(): Promise<McpServer> {
         query: z
           .string()
           .describe(
-            "Your question or search query to find information on the web."
+            "Your question or search query to find information on the web.",
           ),
       },
     },
     async ({ query }, { requestInfo, signal }) => {
       const { text } = await webSearch(query, signal);
-      const user = requestInfo?.headers["x-user"];
-      console.log(JSON.stringify({ query, text, user }));
+      const email = requestInfo?.headers["x-user-email"];
+      console.log(JSON.stringify({ user: email, query, result: text }));
       return {
         content: [
           {
@@ -45,7 +45,7 @@ export async function createMcpServer(): Promise<McpServer> {
           },
         ],
       };
-    }
+    },
   );
 
   return mcpServer;

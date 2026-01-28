@@ -25,6 +25,11 @@ app.get("/callback", async (c) => {
   const error = c.req.query("error");
 
   if (error) {
+    console.error(
+      "OAuth callback error:",
+      error,
+      c.req.query("error_description"),
+    );
     return c.json(
       { error, error_description: c.req.query("error_description") },
       400,
@@ -33,6 +38,7 @@ app.get("/callback", async (c) => {
 
   const transaction = consumeTransaction(txnId || "");
   if (!transaction) {
+    console.error("Invalid or expired transaction:", txnId);
     return c.json({ error: "Invalid or expired transaction" }, 400);
   }
 

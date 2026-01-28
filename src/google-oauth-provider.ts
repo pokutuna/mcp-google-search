@@ -1,20 +1,20 @@
 import { ProxyOAuthServerProvider } from "@hono/mcp";
 import type { Context } from "hono";
 import { env } from "./env.js";
-import {
-  storeTransaction,
-  type OAuthTransaction,
-} from "./transaction-store.js";
+import { storeTransaction } from "./transaction-store.js";
 
-type ClientInfo = {
-  client_id: string;
-  redirect_uris: string[];
-  scope?: string;
-};
+function extractEmailFromIdToken(idToken: string): string | undefined {
+  try {
+    const payload = JSON.parse(
+      Buffer.from(idToken.split(".")[1], "base64").toString(),
+    );
+    return payload.email;
+  } catch {
+    return undefined;
+  }
+}
 
 export class GoogleOAuthProvider extends ProxyOAuthServerProvider {
-  private clients = new Map<string, ClientInfo>();
-
   constructor() {
     super({
       endpoints: {
@@ -25,22 +25,22 @@ export class GoogleOAuthProvider extends ProxyOAuthServerProvider {
       verifyAccessToken: async () => {
         throw new Error("verifyAccessToken should not be called");
       },
-      getClient: async (clientId: string) => this.clients.get(clientId),
+      getClient: async (_clientId: string) => {
+        return {
+          client_id: env.GOOGLE_CLIENT_ID,
+          redirect_uris: [],
+          scope: "openid email profile",
+        };
+      },
     });
   }
 
-  registerClient(metadata: {
-    redirect_uris?: string[];
-    scope?: string;
-  }): ClientInfo {
-    const clientId = `mcp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const clientInfo: ClientInfo = {
-      client_id: clientId,
+  registerClient(metadata: { redirect_uris?: string[] }) {
+    return {
+      client_id: env.GOOGLE_CLIENT_ID,
       redirect_uris: metadata.redirect_uris || [],
-      scope: metadata.scope || "openid email profile",
+      scope: "openid email profile",
     };
-    this.clients.set(clientId, clientInfo);
-    return clientInfo;
   }
 
   async authorize(
@@ -99,13 +99,52 @@ export class GoogleOAuthProvider extends ProxyOAuthServerProvider {
     });
 
     if (!response.ok) {
+      const error = await response.text();
+      console.error("Token exchange failed:", response.status, error);
       throw new Error(`Token exchange failed: ${response.status}`);
     }
 
     const tokens: any = await response.json();
+    const email = extractEmailFromIdToken(tokens.id_token);
+    console.log("User logged in:", email || "unknown");
     return {
       access_token: tokens.id_token,
       refresh_token: tokens.refresh_token,
+      token_type: "Bearer",
+      expires_in: tokens.expires_in,
+      scope: tokens.scope,
+    };
+  }
+
+  async exchangeRefreshToken(
+    _client: any,
+    refreshToken: string,
+    _scopes?: string[],
+    _resource?: URL,
+  ): Promise<any> {
+    const response = await fetch(this._endpoints.tokenUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        client_id: env.GOOGLE_CLIENT_ID,
+        client_secret: env.GOOGLE_CLIENT_SECRET,
+        refresh_token: refreshToken,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error("Token refresh failed:", response.status, error);
+      throw new Error(`Token refresh failed: ${response.status}`);
+    }
+
+    const tokens: any = await response.json();
+    const email = extractEmailFromIdToken(tokens.id_token);
+    console.log("Token refreshed:", email || "unknown");
+    return {
+      access_token: tokens.id_token,
+      refresh_token: tokens.refresh_token || refreshToken,
       token_type: "Bearer",
       expires_in: tokens.expires_in,
       scope: tokens.scope,
