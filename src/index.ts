@@ -12,16 +12,17 @@ if (env.NODE_ENV === "development") {
   app.use("*", cors({ origin: "*" }));
 }
 
-const mcpServer = await createMcpServer();
-
 app.all("/mcp", async (c) => {
   try {
+    const mcpServer = createMcpServer();
     const transport = new WebStandardStreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
       enableJsonResponse: true,
     });
     await mcpServer.connect(transport);
-    return transport.handleRequest(c.req.raw);
+    const response = await transport.handleRequest(c.req.raw);
+    await mcpServer.close();
+    return response;
   } catch (error) {
     console.error("Error handling MCP request:", error);
     return c.json(

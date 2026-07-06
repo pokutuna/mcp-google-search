@@ -8,16 +8,18 @@ import { fileURLToPath } from "url";
 async function packageVersion(): Promise<string> {
   const packageJsonText = await readFile(
     join(dirname(fileURLToPath(import.meta.url)), "../package.json"),
-    "utf8"
+    "utf8",
   );
   const packageJson = JSON.parse(packageJsonText);
   return packageJson.version;
 }
 
-export async function createMcpServer(): Promise<McpServer> {
+const version = await packageVersion();
+
+export function createMcpServer(): McpServer {
   const mcpServer = new McpServer({
     name: "google_search",
-    version: await packageVersion(),
+    version,
   });
 
   mcpServer.registerTool(
@@ -29,7 +31,7 @@ export async function createMcpServer(): Promise<McpServer> {
         query: z
           .string()
           .describe(
-            "Your question or search query to find information on the web."
+            "Your question or search query to find information on the web.",
           ),
       },
     },
@@ -45,7 +47,7 @@ export async function createMcpServer(): Promise<McpServer> {
           },
         ],
       };
-    }
+    },
   );
 
   return mcpServer;
